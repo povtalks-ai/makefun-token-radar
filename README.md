@@ -21,7 +21,7 @@ implied = round( tvl_usd x 0.30
 
 TVL is the activity a token would tax, seven-day growth is its momentum,
 age is how long it has run with no token, and chain count is its breadth.
-The board ranks all 289 rankable pre-token protocols: the 40-protocol
+The board ranks all 198 rankable pre-token protocols: the 40-protocol
 watchlist is the floor, and the early radar is every other rankable
 pre-token protocol. Live-token protocols are set aside with their market
 caps shown, never mixed into the ranking.

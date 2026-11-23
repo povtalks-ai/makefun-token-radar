@@ -1,10 +1,12 @@
-// Token Radar, radar-2 (Node 22, standard library only).
+// Token Radar, radar-2 (Node 22, standard library only), written fresh in
+// this session.
 //
-// Reads the sealed snapshot from /input/snapshot.json (or --input <file|dir>),
-// scores every rankable pre-token protocol with the model in lib/model.ts,
-// writes the ranked board to /output/board.json and the dashboard's data to
-// /output/data.js, copies dashboard/ and screenshots/ to /output, and writes
-// /output/dossier.json with the vendored make.fun library.
+// The entrypoint: read the sealed snapshot from /input/snapshot.json (or
+// --input <file|dir>), score every rankable pre-token protocol with the
+// model in lib/model.ts, write the ranked board to /output/board.json and
+// the dashboard's data to /output/data.js, copy dashboard/ and screenshots/
+// to /output, and write /output/dossier.json with the vendored make.fun
+// library.
 //
 // The dashboard is a static page with no network: dashboard/index.html,
 // dashboard/app.css and dashboard/app.js read the data.js this program
@@ -26,36 +28,45 @@ const TEXT_MAX_BYTES = 65_536;
 const SCREENSHOT_CAPS = { max: 4, max_bytes: 524_288 };
 const IMAGE_NAME = /^[A-Za-z0-9_][A-Za-z0-9._-]{0,127}$/;
 
-/** --name <value> out of the arguments, or the fallback. */
-function arg(name: string, fallback: string): string {
-  const at = process.argv.indexOf(`--${name}`);
+/**
+ * One named argument out of the command line, in either of the two forms
+ * the kit uses: `--name value` or `--name=value`. Falls back when absent.
+ */
+function readArg(name: string, fallback: string): string {
+  const flag = `--${name}`;
+  const at = process.argv.indexOf(flag);
   if (at >= 0 && at + 1 < process.argv.length) return process.argv[at + 1]!;
-  const withEquals = process.argv.find((a) => a.startsWith(`--${name}=`));
-  return withEquals === undefined ? fallback : withEquals.slice(name.length + 3);
+  const joined = process.argv.find((a) => a.startsWith(`${flag}=`));
+  return joined === undefined ? fallback : joined.slice(flag.length + 1);
 }
 
-const inputArg = arg('input', '/input');
-const inputFile = inputArg.endsWith('.json') ? inputArg : join(inputArg, 'snapshot.json');
-if (!existsSync(inputFile)) {
-  process.stderr.write(`token radar: no snapshot at ${inputFile}: pass --input <snapshot.json|directory> or mount the sealed /input\n`);
-  process.exit(2);
+/** Where the snapshot lives: a file as given, or snapshot.json inside a directory. */
+function resolveInput(): string {
+  const given = readArg('input', '/input');
+  if (given.endsWith('.json')) return given;
+  return join(given, 'snapshot.json');
 }
-const out = arg('output', process.env.MAKEFUN_OUTPUT_DIR ?? '/output');
+
+function fail(message: string, code: number): never {
+  process.stderr.write(`token radar: ${message}\n`);
+  process.exit(code);
+}
+
+const inputFile = resolveInput();
+if (!existsSync(inputFile)) {
+  fail(`no snapshot at ${inputFile}: pass --input <snapshot.json|directory> or mount the sealed /input`, 2);
+}
+const out = readArg('output', process.env.MAKEFUN_OUTPUT_DIR ?? '/output');
 
 const snapshot = parseSnapshot(readFileSync(inputFile, 'utf8'));
 const { board, radar } = buildRadar(snapshot);
 const issue = boardIssue(board, snapshot);
 if (issue !== null) {
-  process.stderr.write(`token radar: the model wrote a board the gate refuses: ${issue}\n`);
-  process.exit(1);
+  fail(`the model wrote a board the gate refuses: ${issue}`, 1);
 }
 
-mkdirSync(out, { recursive: true });
-writeFileSync(join(out, 'board.json'), `${JSON.stringify({ rows: board })}\n`);
-writeFileSync(join(out, 'data.js'), dataScript(radar));
-
-/** Copy one directory's regular files into `to`, skipping names that start with a dot. */
-function copyFiles(from: string, to: string): string[] {
+/** Copy one directory's regular files into `to`, skipping names that start with a dot, and name what it copied. */
+function copyDirectory(from: string, to: string): string[] {
   if (!existsSync(from)) return [];
   mkdirSync(to, { recursive: true });
   const copied: string[] = [];
@@ -69,16 +80,18 @@ function copyFiles(from: string, to: string): string[] {
   return copied;
 }
 
-copyFiles(join(here, 'dashboard'), join(out, 'dashboard'));
-const shots = copyFiles(join(here, 'screenshots'), join(out, 'screenshots'));
+mkdirSync(out, { recursive: true });
+writeFileSync(join(out, 'board.json'), `${JSON.stringify({ rows: board })}\n`);
+writeFileSync(join(out, 'data.js'), dataScript(radar));
+
+copyDirectory(join(here, 'dashboard'), join(out, 'dashboard'));
+const shots = copyDirectory(join(here, 'screenshots'), join(out, 'screenshots'));
 if (shots.length < 3) {
-  process.stderr.write(`token radar: screenshots/ holds ${shots.length} image${shots.length === 1 ? '' : 's'}: hand in 3, the board, a detail view and a filtered view\n`);
-  process.exit(1);
+  fail(`screenshots/ holds ${shots.length} image${shots.length === 1 ? '' : 's'}: hand in 3, the board, a detail view and a filtered view`, 1);
 }
 for (const name of shots) {
   if (!IMAGE_NAME.test(name)) {
-    process.stderr.write(`token radar: screenshots/${name}: a name is letters, digits and . _ -, 1 to 128 characters\n`);
-    process.exit(1);
+    fail(`screenshots/${name}: a name is letters, digits and . _ -, 1 to 128 characters`, 1);
   }
 }
 
