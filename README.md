@@ -1,5 +1,11 @@
 # Token Radar — radar-2
 
+[![make.fun · token-radar-01](https://make.fun/badge/token-radar-01.svg)](https://make.fun/bounty/token-radar-01?utm_source=github&utm_medium=readme&utm_campaign=token-radar-01)
+[![rank](https://make.fun/badge/token-radar-01/povtalks-ai/makefun-token-radar/rank.svg)](https://make.fun/bounty/token-radar-01/leaderboard?utm_source=github&utm_medium=readme&utm_campaign=token-radar-01)
+[![reward](https://make.fun/badge/token-radar-01/povtalks-ai/makefun-token-radar/reward.svg)](https://make.fun/bounty/token-radar-01?utm_source=github&utm_medium=readme&utm_campaign=token-radar-01)
+
+Built for the [make.fun "Build the best token launch radar" bounty](https://make.fun/bounty/token-radar-01), $1,325 in USDC.
+
 ![Token Radar](https://make.fun/bounty/token-radar-01)
 
 Build the best token launch radar: read a sealed snapshot of every protocol
